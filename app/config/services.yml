@@ -1,7 +1,48 @@
+parameters:
+    users:
+        - { id: 1034, name: 'Rafael', email: 'rafael@example.com' }
+        - { id: 1035, name: 'Donatello', email: 'donatello@example.com' }
+        - { id: 1036, name: 'Michelangelo', email: 'michelangelo@example.com' }
+        - { id: 1037, name: 'Leonardo', email: 'leonardo@example.com' }
+
 services:
     user_repository:
         class: AppBundle\Model\UserRepository
+        arguments: [%users%]
     stats_system:
         class: AppBundle\Service\StatsSystem
     marketing_system:
         class: AppBundle\Service\MarketingSystem
+
+    user_handler:
+        class: AppBundle\CommandHandler\UserHandler
+        arguments: [@user_repository, @event_bus]
+        tags:
+            - { name: command_handler, handles: user.change_email, method: handleChangeUserEmail }
+
+    when_changed_user_email_notify_marketing:
+        class: AppBundle\EventSubscriber\WhenChangedUserEmailNotifyMarketing
+        arguments: [@marketing_system]
+        tags:
+            - { name: event_subscriber, subscribes_to: user.changed_email }
+
+    when_changed_user_email_notify_stats:
+        class: AppBundle\EventSubscriber\WhenChangedUserEmailNotifyStats
+        arguments: [@stats_system]
+        tags:
+            - { name: event_subscriber, subscribes_to: user.changed_email }
+
+    when_changed_user_email_log:
+        class: AppBundle\EventSubscriber\WhenChangedUserEmailLogChange
+        arguments: [@logger]
+        tags:
+            - { name: event_subscriber, subscribes_to: user.changed_email }
+
+    api.controller.user:
+        class:     AppBundle\Controller\ApiUserController
+        arguments: [@command_bus]
+
+    kernel.listener.json_request:
+        class: AppBundle\Request\JsonRequestListener
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
