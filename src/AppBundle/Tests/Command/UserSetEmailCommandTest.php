@@ -9,20 +9,14 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 class UserSetEmailCommandTest extends KernelTestCase
 {
+    const commandName = 'user:set-email';
+
     /** @test */
     public function it_executes_change_user_email_command()
     {
-        $kernel = $this->createKernel();
-        $kernel->boot();
-
-        $application = new Application($kernel);
-        $application->add(new UserSetEmailCommand());
-
-        $command = $application->find('user:set-email');
-        $commandTester = new CommandTester($command);
-
+        $commandTester = $this->createCommandTester();
         $commandTester->execute([
-            'command' => $command->getName(),
+            'command' => self::commandName,
             'id' => '1037',
             'email' => 'new@example.com',
         ]);
@@ -34,17 +28,10 @@ class UserSetEmailCommandTest extends KernelTestCase
     /** @test */
     public function it_shows_error_on_invalid_email()
     {
-        $kernel = $this->createKernel();
-        $kernel->boot();
-
-        $application = new Application($kernel);
-        $application->add(new UserSetEmailCommand());
-
-        $command = $application->find('user:set-email');
-        $commandTester = new CommandTester($command);
+        $commandTester = $this->createCommandTester();
 
         $commandTester->execute([
-            'command' => $command->getName(),
+            'command' => self::commandName,
             'id' => '1037',
             'email' => 'invalid',
         ]);
@@ -56,17 +43,10 @@ class UserSetEmailCommandTest extends KernelTestCase
     /** @test */
     public function it_shows_error_on_invalid_user_id_value()
     {
-        $kernel = $this->createKernel();
-        $kernel->boot();
-
-        $application = new Application($kernel);
-        $application->add(new UserSetEmailCommand());
-
-        $command = $application->find('user:set-email');
-        $commandTester = new CommandTester($command);
+        $commandTester = $this->createCommandTester();
 
         $commandTester->execute([
-            'command' => $command->getName(),
+            'command' => self::commandName,
             'id' => 'nom',
             'email' => 'new@example.com',
         ]);
@@ -78,22 +58,28 @@ class UserSetEmailCommandTest extends KernelTestCase
     /** @test */
     public function it_shows_error_on_unexisting_user()
     {
-        $kernel = $this->createKernel();
-        $kernel->boot();
-
-        $application = new Application($kernel);
-        $application->add(new UserSetEmailCommand());
-
-        $command = $application->find('user:set-email');
-        $commandTester = new CommandTester($command);
-
+        $commandTester = $this->createCommandTester();
         $commandTester->execute([
-            'command' => $command->getName(),
+            'command' => self::commandName,
             'id' => '15',
             'email' => 'new@example.com',
         ]);
 
         $this->assertRegExp('/User(.*)not found/', $commandTester->getDisplay());
         $this->assertEquals(1, $commandTester->getStatusCode());
+    }
+
+    private function createCommandTester()
+    {
+        $kernel = $this->createKernel();
+        $kernel->boot();
+
+        $application = new Application($kernel);
+        $application->add(new UserSetEmailCommand());
+
+        $command = $application->find(self::commandName);
+        $commandTester = new CommandTester($command);
+
+        return $commandTester;
     }
 }
